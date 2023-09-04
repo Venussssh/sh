@@ -12,10 +12,11 @@
 #include <float.h>
 
 
-// 未修改
+
 // #define EPS std::numeric_limits<vqf_real_t>::epsilon()
 #define EPS FLT_EPSILON
 // #define NaN std::numeric_limits<vqf_real_t>::quiet_NaN()
+#define NaN NAN
 
 void std_fill(double array[], int ARRAY_SIZE)
 {
@@ -26,10 +27,11 @@ void std_fill(double array[], int ARRAY_SIZE)
         array[i] = NAN;
     }
 }
+
 void std_fill_any(double array[], int ARRAY_SIZE, vqf_real_t any)
 {
     
-    // 使用NAN填充数组
+    // 使用any填充数组
     for (int i = 0; i < ARRAY_SIZE; i++) 
     {
         array[i] = any;
@@ -85,18 +87,19 @@ void std_copy(vqf_real_t Copy_array[], int ARRAY_SIZE, vqf_real_t Result_array[]
         Result_array[i] = Copy_array[i];
     }
 }
-
+//平方函数
 vqf_real_t square(vqf_real_t x)
 {
     return x*x;
 }
 
 
-
-
 LSM6DS3_VQFTypeDef params;
 VQFCoefficients coeffs;
 VQFState state;
+
+
+
 //进行自定义参数赋值
 void VQFParams_Init(vqf_real_t gyrTs, vqf_real_t accTs, vqf_real_t magTs)
 {
@@ -142,7 +145,7 @@ void VQFParams_Init(vqf_real_t gyrTs, vqf_real_t accTs, vqf_real_t magTs)
 
 
 
-void updateGyr(const vqf_real_t gyr[3])
+void updateGyr(vqf_real_t gyr[3])
 {
     // rest detection
     if (params.restBiasEstEnabled || params.magDistRejectionEnabled) {
@@ -178,7 +181,7 @@ void updateGyr(const vqf_real_t gyr[3])
 
 
 
-void updateAcc(const vqf_real_t acc[3])
+void updateAcc(vqf_real_t acc[3])
 {
     // ignore [0 0 0] samples
     if (acc[0] == (0.0) && acc[1] == (0.0) && acc[2] == (0.0)) 
@@ -323,7 +326,7 @@ void updateAcc(const vqf_real_t acc[3])
             // step 4: P = P - K R P
             matrix3Multiply(K, R, K); // K = K R
             matrix3Multiply(K, state.biasP, K); // K = K R P
-            for(size_t i = 0; i < 9; i++) {
+            for(int i = 0; i < 9; i++) {
                 state.biasP[i] -= K[i];
             }
 
@@ -377,10 +380,10 @@ void setup()
 {
     assert(coeffs.gyrTs > 0);
     assert(coeffs.accTs > 0);
-    assert(coeffs.magTs > 0);
+    // assert(coeffs.magTs > 0);
     //调用自定义函数filterCoeffs
     filterCoeffs(params.tauAcc, coeffs.accTs, coeffs.accLpB, coeffs.accLpA);
-    coeffs.kMag = gainFromTau(params.tauMag, coeffs.magTs);
+    // coeffs.kMag = gainFromTau(params.tauMag, coeffs.magTs);
     coeffs.biasP0 = square(params.biasSigmaInit*100.0);
     // the system noise increases the variance from 0 to (0.1 °/s)^2 in biasForgettingTime seconds
     coeffs.biasV = square(0.1*100.0)*coeffs.accTs/params.biasForgettingTime;
@@ -486,7 +489,7 @@ void quatMultiply(vqf_real_t q1[4], vqf_real_t q2[4], vqf_real_t out[4])
 }
 
 
-void quatConj(const vqf_real_t q[4], vqf_real_t out[4])
+void quatConj(vqf_real_t q[4], vqf_real_t out[4])
 {
     vqf_real_t w = q[0];
     vqf_real_t x = -q[1];
@@ -518,39 +521,42 @@ void quatApplyDelta(vqf_real_t q[], vqf_real_t delta, vqf_real_t out[])
     out[0] = w; out[1] = x; out[2] = y; out[3] = z;
 }
 
-void quatRotate(const vqf_real_t q[4], const vqf_real_t v[3], vqf_real_t out[3])
+void quatRotate(vqf_real_t q[4], vqf_real_t v[3], vqf_real_t out[3])
 {
     vqf_real_t x = (1 - 2*q[2]*q[2] - 2*q[3]*q[3])*v[0] + 2*v[1]*(q[2]*q[1] - q[0]*q[3]) + 2*v[2]*(q[0]*q[2] + q[3]*q[1]);
     vqf_real_t y = 2*v[0]*(q[0]*q[3] + q[2]*q[1]) + v[1]*(1 - 2*q[1]*q[1] - 2*q[3]*q[3]) + 2*v[2]*(q[2]*q[3] - q[1]*q[0]);
     vqf_real_t z = 2*v[0]*(q[3]*q[1] - q[0]*q[2]) + 2*v[1]*(q[0]*q[1] + q[3]*q[2]) + v[2]*(1 - 2*q[1]*q[1] - 2*q[2]*q[2]);
     out[0] = x; out[1] = y; out[2] = z;
 }
-//size_t??
-vqf_real_t norm(vqf_real_t vec[], size_t N)
+
+
+
+//norm
+vqf_real_t norm(vqf_real_t vec[], int N)
 {
     vqf_real_t s = 0;
-    for(size_t i = 0; i < N; i++) {
+    for(int i = 0; i < N; i++) {
         s += vec[i]*vec[i];
     }
     return sqrt(s);
 }
 
 
-void normalize(vqf_real_t vec[], size_t N)
+void normalize(vqf_real_t vec[], int N)
 {
     vqf_real_t n = norm(vec, N);
     if (n < EPS) {
         return;
     }
-    for(size_t i = 0; i < N; i++) {
+    for(int i = 0; i < N; i++) {
         vec[i] /= n;
     }
 }
 
 
-void clip(vqf_real_t vec[], size_t N, vqf_real_t min, vqf_real_t max)
+void clip(vqf_real_t vec[], int N, vqf_real_t min, vqf_real_t max)
 {
-    for(size_t i = 0; i < N; i++) {
+    for(int i = 0; i < N; i++) {
         if (vec[i] < min) {
             vec[i] = min;
         } else if (vec[i] > max) {
@@ -558,6 +564,10 @@ void clip(vqf_real_t vec[], size_t N, vqf_real_t min, vqf_real_t max)
         }
     }
 }
+
+
+
+
 
 //不允许使用类型名？
 vqf_real_t gainFromTau(vqf_real_t tau, vqf_real_t Ts)
@@ -597,6 +607,7 @@ void filterCoeffs(vqf_real_t tau, vqf_real_t Ts, double outB[], double outA[])
     outA[1] = (1-sqrt(2)*C+C*C)/D; // a2
 }
 
+
 void filterInitialState(vqf_real_t x0, double b[3], double a[2], double out[])
 {
     // initial state for steady state (equivalent to scipy.signal.lfilter_zi, obtained by setting y=x=x0 in the filter
@@ -607,9 +618,9 @@ void filterInitialState(vqf_real_t x0, double b[3], double a[2], double out[])
 
 
 
-void filterAdaptStateForCoeffChange(vqf_real_t last_y[], size_t N, const double b_old[],
-                                         const double a_old[], const double b_new[],
-                                         const double a_new[], double state[])
+void filterAdaptStateForCoeffChange(vqf_real_t last_y[], size_t N, double b_old[],
+                                         double a_old[], double b_new[],
+                                         double a_new[], double state[])
 {
     if (isnan(state[0])) {
         return;
@@ -622,7 +633,7 @@ void filterAdaptStateForCoeffChange(vqf_real_t last_y[], size_t N, const double 
 
 
 
-vqf_real_t filterStep(vqf_real_t x, const double b[3], const double a[2], double state[2])
+vqf_real_t filterStep(vqf_real_t x, double b[3], double a[2], double state[2])
 {
     // difference equations based on scipy.signal.lfilter documentation
     // assumes that a0 == 1.0
@@ -631,40 +642,47 @@ vqf_real_t filterStep(vqf_real_t x, const double b[3], const double a[2], double
     state[1] = b[2]*x - a[1]*y;
     return y;
 }
-//size_t
-void filterVec(const vqf_real_t x[], size_t N, vqf_real_t tau, vqf_real_t Ts, double b[3],
+
+
+
+
+//8.31
+void filterVec(vqf_real_t x[], int N, vqf_real_t tau, vqf_real_t Ts, double b[3],
                     double a[2], double state[], vqf_real_t out[])
 {
-    assert(N>=2);
+    assert(N >= 2);
 
     // to avoid depending on a single sample, average the first samples (for duration tau)
     // and then use this average to calculate the filter initial state
     if (isnan(state[0])) { // initialization phase
         if (isnan(state[1])) { // first sample
             state[1] = 0; // state[1] is used to store the sample count
-            for(size_t i = 0; i < N; i++) {
+            uint8_t i;
+            for( i = 0; i < N; i++) {
                 state[2+i] = 0; // state[2+i] is used to store the sum
             }
         }
         state[1]++;
-        for (size_t i = 0; i < N; i++) {
+        uint8_t i;
+        for (i = 0; i < N; i++) {
             state[2+i] += x[i];
             out[i] = state[2+i]/state[1];
         }
         if (state[1]*Ts >= tau) {
-            for(size_t i = 0; i < N; i++) {
+            for(uint8_t i = 0; i < N; i++) {
                filterInitialState(out[i], b, a, state+2*i);
             }
         }
         return;
     }
 
-    for (size_t i = 0; i < N; i++) {
+    for (uint8_t i = 0; i < N; i++) {
         out[i] = filterStep(x[i], b, a, state+2*i);
     }
 }
 
-void update(const vqf_real_t gyr[3], const vqf_real_t acc[3])
+//数据更新
+void update(vqf_real_t gyr[3], vqf_real_t acc[3])
 {
     updateGyr(gyr);
     updateAcc(acc);
@@ -697,7 +715,7 @@ vqf_real_t getBiasEstimate(vqf_real_t out[3])
     vqf_real_t sum2 = fabs(state.biasP[3]) + fabs(state.biasP[4]) + fabs(state.biasP[5]);
     vqf_real_t sum3 = fabs(state.biasP[6]) + fabs(state.biasP[7]) + fabs(state.biasP[8]);
     // vqf_real_t P = std::min(std::max(std::max(sum1, sum2), sum3), coeffs.biasP0);
-    vqf_real_t P = std_min(std_max(std_max(sum1, sum2), sum3), coeffs.biasP0);
+    vqf_real_t P = min(std_max(std_max(sum1, sum2), sum3), coeffs.biasP0);
 #else
     vqf_real_t P = state.biasP;
 #endif
@@ -851,6 +869,28 @@ void setRestDetectionThresholds(vqf_real_t thGyr, vqf_real_t thAcc)
 }
 
 
+void RunVQF(vqf_real_t Data_Gx, vqf_real_t Data_Gy, vqf_real_t Data_Gz, vqf_real_t Data_XLx, vqf_real_t Data_XLy, vqf_real_t Data_XLz, vqf_real_t *angle)
+{
+  
+    vqf_real_t gyr[3] = {Data_Gx, Data_Gy, Data_Gz};
+    vqf_real_t acc[3] = {Data_XLx, Data_XLy, Data_XLz};
+    vqf_real_t q[4] = {1, 0, 0, 0};
+    vqf_real_t pitch;
+    vqf_real_t roll;
+    vqf_real_t yaw;
+    VQFParams_Init(0.01, -1, -1);
+    update(gyr, acc);
+    getQuat6D(q);
+
+    pitch = asin(-2 * q[1] * q[3] + 2 * q[0] * q[2]) * 180 / M_PI;
+    roll  = atan2(2 * q[2] * q[3] + 2 * q[0] * q[1], -2 * q[1] * q[1] - 2 * q[2] * q[2] + 1) * 180 / M_PI;
+    yaw   = atan2(2 * q[1] * q[2] + 2 * q[0] * q[3], -2 * q[2] * q[2] - 2 * q[3] * q[3] + 1) * 180 / M_PI;
+    angle[0] = pitch;
+    angle[1] = roll;
+    angle[2] = yaw;
+}
+
+
 
 
 
@@ -870,7 +910,7 @@ void matrix3SetToScaledIdentity(vqf_real_t scale, vqf_real_t out[9])
     out[8] = scale;
 }
 
-void matrix3Multiply(const vqf_real_t in1[9], const vqf_real_t in2[9], vqf_real_t out[9])
+void matrix3Multiply(vqf_real_t in1[9], vqf_real_t in2[9], vqf_real_t out[9])
 {
     vqf_real_t tmp[9];
     tmp[0] = in1[0]*in2[0] + in1[1]*in2[3] + in1[2]*in2[6];
@@ -885,7 +925,7 @@ void matrix3Multiply(const vqf_real_t in1[9], const vqf_real_t in2[9], vqf_real_
     std_copy(tmp, 9, out);
 }
 
-void matrix3MultiplyTpsFirst(const vqf_real_t in1[9], const vqf_real_t in2[9], vqf_real_t out[9])
+void matrix3MultiplyTpsFirst(vqf_real_t in1[9], vqf_real_t in2[9], vqf_real_t out[9])
 {
     vqf_real_t tmp[9];
     tmp[0] = in1[0]*in2[0] + in1[3]*in2[3] + in1[6]*in2[6];
@@ -900,7 +940,7 @@ void matrix3MultiplyTpsFirst(const vqf_real_t in1[9], const vqf_real_t in2[9], v
     std_copy(tmp, 9, out);
 }
 
-void matrix3MultiplyTpsSecond(const vqf_real_t in1[9], const vqf_real_t in2[9], vqf_real_t out[9])
+void matrix3MultiplyTpsSecond(vqf_real_t in1[9], vqf_real_t in2[9], vqf_real_t out[9])
 {
     vqf_real_t tmp[9];
     tmp[0] = in1[0]*in2[0] + in1[1]*in2[1] + in1[2]*in2[2];
@@ -915,7 +955,7 @@ void matrix3MultiplyTpsSecond(const vqf_real_t in1[9], const vqf_real_t in2[9], 
     std_copy(tmp, 9, out);
 }
 
-bool matrix3Inv(const vqf_real_t in[9], vqf_real_t out[9])
+bool matrix3Inv(vqf_real_t in[9], vqf_real_t out[9])
 {
     // in = [a b c; d e f; g h i]
     double A = in[4]*in[8] - in[5]*in[7]; // (e*i - f*h)

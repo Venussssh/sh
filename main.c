@@ -33,6 +33,7 @@
 #include "stm32f3xx_it.h"
 #include "vqf.h"
 #include "math.h"
+// #include "basicvqf.h"
 LSM6DS3_FLAG_TypeDef LSM6DS3_READWRITE;
 LSM6DS3_DATA_TypeDef LSM6DS3_AG_DATA;
 LSM6DS3_CHANGE_TypeDef LSM6DS3_CHANGE;
@@ -117,12 +118,11 @@ float Gyro_Tempout[3] = {0};
 Get_Gyro_Compensate(&Gyro_Tempout);
 float Acc_Tempout[3] = {0};
 Get_Acc_Compensate(&Acc_Tempout);
-VQFParams_Init(0.01, -1, -1);
-HAL_Delay(500);
-run();
 
-// HAL_TIM_Base_Start_IT(&htim2);
-// vqf_real_t quat[4] = {0, 0, 0, 0};
+HAL_Delay(500);
+
+HAL_TIM_Base_Start_IT(&htim2);
+
 
 
 
@@ -140,21 +140,22 @@ run();
     /* USER CODE BEGIN 3 */
     if(LSM6DS3_READWRITE.flag6 == true)
     {
-      printf("\raccX:%.2f,\taccY:%.2f,\taccZ:%.2f,\tgyroX:%.2f,\tgyroY:%.2f,\tgyroZ:%.2f\r", LSM6DS3_AG_DATA.ACC_DATA_INT[0] - Acc_Tempout[0], LSM6DS3_AG_DATA.ACC_DATA_INT[1] - Acc_Tempout[1], LSM6DS3_AG_DATA.ACC_DATA_INT[2] - Acc_Tempout[2] + 0.98, LSM6DS3_AG_DATA.GYRO_DATA_INT[0] - Gyro_Tempout[0], LSM6DS3_AG_DATA.GYRO_DATA_INT[1] - Gyro_Tempout[1], LSM6DS3_AG_DATA.GYRO_DATA_INT[2] - Gyro_Tempout[2]);
+      // update(LSM6DS3_AG_DATA.GYRO_DATA_INT, LSM6DS3_AG_DATA.ACC_DATA_INT);
+      // getQuat6D(quat);
+      // vqf_real_t angle[3] = {0, 0, 0};
+      // RunBasicVQF(LSM6DS3_AG_DATA.GYRO_DATA_INT[0] - Gyro_Tempout[0], LSM6DS3_AG_DATA.GYRO_DATA_INT[1] - Gyro_Tempout[1], LSM6DS3_AG_DATA.GYRO_DATA_INT[2] - Gyro_Tempout[2], LSM6DS3_AG_DATA.ACC_DATA_INT[0] - Acc_Tempout[0], LSM6DS3_AG_DATA.ACC_DATA_INT[1] - Acc_Tempout[1], LSM6DS3_AG_DATA.ACC_DATA_INT[2] - Acc_Tempout[2]+0.98, &angle);
+      // printf("\raccX:%.2f,\taccY:%.2f,\taccZ:%.2f,\tgyroX:%.2f,\tgyroY:%.2f,\tgyroZ:%.2f, \tPitch:%.2f, \tRoll:%.2f, \tYaw:%.2f\r", LSM6DS3_AG_DATA.ACC_DATA_INT[0] - Acc_Tempout[0], LSM6DS3_AG_DATA.ACC_DATA_INT[1] - Acc_Tempout[1], LSM6DS3_AG_DATA.ACC_DATA_INT[2] - Acc_Tempout[2] + 0.98, LSM6DS3_AG_DATA.GYRO_DATA_INT[0] - Gyro_Tempout[0], LSM6DS3_AG_DATA.GYRO_DATA_INT[1] - Gyro_Tempout[1], LSM6DS3_AG_DATA.GYRO_DATA_INT[2] - Gyro_Tempout[2], angle[0], angle[1], angle[2]);
+      // printf("\n");
+      vqf_real_t angle[3] = {0, 0, 0};
+      //VQF
+      RunVQF(LSM6DS3_AG_DATA.GYRO_DATA_INT[0] - Gyro_Tempout[0], LSM6DS3_AG_DATA.GYRO_DATA_INT[1] - Gyro_Tempout[1], LSM6DS3_AG_DATA.GYRO_DATA_INT[2] - Gyro_Tempout[2], LSM6DS3_AG_DATA.ACC_DATA_INT[0] - Acc_Tempout[0], LSM6DS3_AG_DATA.ACC_DATA_INT[1] - Acc_Tempout[1], LSM6DS3_AG_DATA.ACC_DATA_INT[2] - Acc_Tempout[2]+0.98, &angle);
+      // printf("\raccX:%.2f,\taccY:%.2f,\taccZ:%.2f,\tgyroX:%.2f,\tgyroY:%.2f,\tgyroZ:%.2f, \tPitch:%.2f, \tRoll:%.2f\r", LSM6DS3_AG_DATA.ACC_DATA_INT[0] - Acc_Tempout[0], LSM6DS3_AG_DATA.ACC_DATA_INT[1] - Acc_Tempout[1], LSM6DS3_AG_DATA.ACC_DATA_INT[2] - Acc_Tempout[2] + 0.98, LSM6DS3_AG_DATA.GYRO_DATA_INT[0] - Gyro_Tempout[0], LSM6DS3_AG_DATA.GYRO_DATA_INT[1] - Gyro_Tempout[1], LSM6DS3_AG_DATA.GYRO_DATA_INT[2] - Gyro_Tempout[2], Pitch, Roll);
+      printf("\raccX:%.2f,\taccY:%.2f,\taccZ:%.2f,\tgyroX:%.2f,\tgyroY:%.2f,\tgyroZ:%.2f, \tPitch:%.2f, \tRoll:%.2f, \tYaw:%.2f\r", LSM6DS3_AG_DATA.ACC_DATA_INT[0] - Acc_Tempout[0], LSM6DS3_AG_DATA.ACC_DATA_INT[1] - Acc_Tempout[1], LSM6DS3_AG_DATA.ACC_DATA_INT[2] - Acc_Tempout[2] + 0.98, LSM6DS3_AG_DATA.GYRO_DATA_INT[0] - Gyro_Tempout[0], LSM6DS3_AG_DATA.GYRO_DATA_INT[1] - Gyro_Tempout[1], LSM6DS3_AG_DATA.GYRO_DATA_INT[2] - Gyro_Tempout[2], angle[0], angle[1], angle[2]);
       printf("\n");
       LSM6DS3_READWRITE.flag6 = false;
     }
     
-    // if(LSM6DS3_READWRITE.flag6 == true)
-    // {
-    //   update(LSM6DS3_AG_DATA.GYRO_DATA_INT, LSM6DS3_AG_DATA.ACC_DATA_INT);
-    //   getQuat6D(quat);
-    //   LSM6DS3_AG_DATA.Pitch  = asin(-2 * quat[1] * quat[3] + 2 * quat[0]* quat[2])* 57.3; // pitch ,转换为度�????
-    //   LSM6DS3_AG_DATA.Roll = atan2(2 * quat[2] * quat[3] + 2 * quat[0] * quat[1], -2 * quat[1] * quat[1] - 2 * quat[2]* quat[2] + 1)* 57.3; // rollv
-    //   printf("\rPitch:%.2f, \tRoll:%.2f\r", LSM6DS3_AG_DATA.Pitch, LSM6DS3_AG_DATA.Roll);
-    //   printf("\n");
-    //   LSM6DS3_READWRITE.flag6 = false;
-    // }
+
 
     
   }
@@ -215,35 +216,35 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 	
   if(GPIO_Pin==KEY1_Pin)
   {
-    // LSM6DS3_INT1();
+    LSM6DS3_READWRITE.flag1 = true;
 
   }
   
 
   if(GPIO_Pin==KEY2_Pin)
   {
-
+    LSM6DS3_READWRITE.flag2 = true;
   }
 
 
 
   if(GPIO_Pin==KEY3_Pin)
   {
-    // LSM6DS3_INT1_Close();
+    LSM6DS3_READWRITE.flag3 = true;
   }
-  //Acc
+  //Acc中断
   if(GPIO_Pin==Acc_EXTI_Pin)
 	
   {
-    LSM6DS3_READWRITE.flag1 = true;
+    LSM6DS3_READWRITE.flag4 = true;
     
     Get_Acceleration(LSM6DS3_AG_DATA.ACC_DATA_INT);
 
 	}
-  //Gyro
+  //Gyro中断
   if(GPIO_Pin==Gyro_EXTI_Pin)
   {
-    LSM6DS3_READWRITE.flag2 = true;
+    LSM6DS3_READWRITE.flag5 = true;
     
     Get_Gyroscope(LSM6DS3_AG_DATA.GYRO_DATA_INT);
     
@@ -251,7 +252,7 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 
 }
 
-//定时器回调函�?
+//定时器回调函数
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 {
   vqf_real_t quat[4] = {0, 0, 0, 0};
@@ -261,37 +262,6 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
   
 }
 
-
-void run(void)
-{
-  vqf_real_t gyr[3] = {0.01, 0.01, 0.01};
-  vqf_real_t acc[3] = {0, 9.8, 0};
-  vqf_real_t mag[3] = {0.5, 0.8, 0};
-  vqf_real_t quat[4] = {0, 0, 0, 0};
-  vqf_real_t Pitch;
-  vqf_real_t Roll;
-
-  float Gyro_Temp[3] = {0};
-  Get_Gyro_Compensate(&Gyro_Temp);
-  float Acc_Temp[3] = {0};
-  Get_Acc_Compensate(&Acc_Temp);
-
-  VQFParams_Init(0.01, -1, -1);
-  for(size_t i = 0; i < 10000; i++)
-  {
-    Get_Acceleration(acc);
-    Get_Gyroscope(gyr);
-   
-    update(gyr, acc);
-    getQuat6D(quat);
-    Pitch  = asin(-2 * quat[1] * quat[3] + 2 * quat[0]* quat[2])* 57.3; // pitch ,转换为度�????
-    Roll = atan2(2 * quat[2] * quat[3] + 2 * quat[0] * quat[1], -2 * quat[1] * quat[1] - 2 * quat[2]* quat[2] + 1)* 57.3; // rollv
-    printf("\rPitch:%.2f, \tRoll:%.2f\r", Pitch, Roll);
-    printf("\n");
-
-  }
-
-}
 
 
 /* USER CODE END 4 */
