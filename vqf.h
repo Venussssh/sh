@@ -46,23 +46,38 @@ typedef struct
 	vqf_real_t tauAcc;
 	vqf_real_t tauMag;
 	#ifndef VQF_NO_MOTION_BIAS_ESTIMATION
+    //运动阶段启用陀螺仪偏差
     bool motionBiasEstEnabled;
     #endif
+    //休息阶段启用陀螺仪偏差估计
     bool restBiasEstEnabled;//true
+    //磁干扰，舍弃
     bool magDistRejectionEnabled;//no true
+    //初始偏差估计的不确定性偏差？
     vqf_real_t biasSigmaInit;
+    //偏置估计不确定度
     vqf_real_t biasForgettingTime;
+    //陀螺仪最大预期偏差
     vqf_real_t biasClip;
     #ifndef VQF_NO_MOTION_BIAS_ESTIMATION
+    //运动过程中收敛偏差估计不确定性的标准差
     vqf_real_t biasSigmaMotion;
+    //偏差因子
     vqf_real_t biasVerticalForgettingFactor;
     #endif
+    //标准差
     vqf_real_t biasSigmaRest;
+    //休息检测时间阈值
     vqf_real_t restMinT;
+    //用于休息检测的低通滤波器常数
     vqf_real_t restFilterTau;
+    //精致检测的角速度阈值
     vqf_real_t restThGyr;
+    //静止检测的加速度阈值
     vqf_real_t restThAcc;
+    //磁干扰
     vqf_real_t magCurrentTau;
+    //调整磁场基准的时间常数
     vqf_real_t magRefTau;//mag
     vqf_real_t magNormTh;//mag
     vqf_real_t magDipTh;//mag
@@ -75,7 +90,7 @@ typedef struct
 }LSM6DS3_VQFTypeDef;
 
 
-//结构体
+
 typedef struct
 {
     vqf_real_t gyrTs;
@@ -143,7 +158,7 @@ typedef struct
     double magNormDipLpState[2*2];
 }VQFState;
 
-
+void quatSetToIdentity(vqf_real_t out[4]);
 vqf_real_t square(vqf_real_t x);
 void setMagRef(vqf_real_t norm, vqf_real_t dip);
 vqf_real_t getMagRefDip();
@@ -161,50 +176,46 @@ void setMagDistRejectionEnabled(bool enabled);
 void setTauAcc(vqf_real_t tauAcc);
 void setTauMag(vqf_real_t tauMag);
 void setRestDetectionThresholds(vqf_real_t thGyr, vqf_real_t thAcc);
-
-
-
-
-
-
 double min(vqf_real_t a, vqf_real_t b);
 void getQuat6D(vqf_real_t out[4]);
-void updateGyr(const vqf_real_t gyr[3]);
-void updateAcc(const vqf_real_t acc[3]);
+void updateGyr(vqf_real_t gyr[3]);
+void updateAcc(vqf_real_t acc[3]);
 void std_fill_any(double array[], int ARRAY_SIZE, vqf_real_t any);
 void std_fill(double array[], int ARRAY_SIZE);
 void std_fill_zero(double array[], int ARRAY_SIZE);
 void std_fill_doublezero(double array[], int ARRAY_SIZE);
 double std_max(vqf_real_t a, vqf_real_t b);
 void std_copy(vqf_real_t Copy_array[], int ARRAY_SIZE, vqf_real_t Result_array[]);
+
 void VQFParams_Init(vqf_real_t gyrTs, vqf_real_t accTs, vqf_real_t magTs);
 void setup();
-void update(const vqf_real_t gyr[3], const vqf_real_t acc[3]);
+void update(vqf_real_t gyr[3], vqf_real_t acc[3]);
 void resetState();
 void quatMultiply(vqf_real_t q1[4], vqf_real_t q2[4], vqf_real_t out[4]);
-void quatConj(const vqf_real_t q[4], vqf_real_t out[4]);
+void quatConj(vqf_real_t q[4], vqf_real_t out[4]);
 void quatSetToIdentity(vqf_real_t out[4]);
 void quatApplyDelta(vqf_real_t q[], vqf_real_t delta, vqf_real_t out[]);
-void quatRotate(const vqf_real_t q[4], const vqf_real_t v[3], vqf_real_t out[3]);
-vqf_real_t norm(vqf_real_t vec[], size_t N);
-void normalize(vqf_real_t vec[], size_t N);
-void clip(vqf_real_t vec[], size_t N, vqf_real_t min, vqf_real_t max);
+void quatRotate(vqf_real_t q[4], vqf_real_t v[3], vqf_real_t out[3]);
+vqf_real_t norm(vqf_real_t vec[], int N);
+void normalize(vqf_real_t vec[], int N);
+void clip(vqf_real_t vec[], int N, vqf_real_t min, vqf_real_t max);
 vqf_real_t gainFromTau(vqf_real_t tau, vqf_real_t Ts);
 void filterCoeffs(vqf_real_t tau, vqf_real_t Ts, double outB[], double outA[]);
 void filterInitialState(vqf_real_t x0, double b[3], double a[2], double out[]);
-vqf_real_t filterStep(vqf_real_t x, const double b[3], const double a[2], double state[2]);
+vqf_real_t filterStep(vqf_real_t x, double b[3], double a[2], double state[2]);
 void getQuat6D(vqf_real_t out[4]);
 void matrix3SetToScaledIdentity(vqf_real_t scale, vqf_real_t out[9]);
-void matrix3Multiply(const vqf_real_t in1[9], const vqf_real_t in2[9], vqf_real_t out[9]);
-void matrix3MultiplyTpsFirst(const vqf_real_t in1[9], const vqf_real_t in2[9], vqf_real_t out[9]);
-void matrix3MultiplyTpsSecond(const vqf_real_t in1[9], const vqf_real_t in2[9], vqf_real_t out[9]);
-bool matrix3Inv(const vqf_real_t in[9], vqf_real_t out[9]);
+void matrix3Multiply(vqf_real_t in1[9], vqf_real_t in2[9], vqf_real_t out[9]);
+void matrix3MultiplyTpsFirst(vqf_real_t in1[9], vqf_real_t in2[9], vqf_real_t out[9]);
+void matrix3MultiplyTpsSecond(vqf_real_t in1[9], vqf_real_t in2[9], vqf_real_t out[9]);
+bool matrix3Inv(vqf_real_t in[9], vqf_real_t out[9]);
+void RunVQF(vqf_real_t Data_Gx, vqf_real_t Data_Gy, vqf_real_t Data_Gz, vqf_real_t Data_XLx, vqf_real_t Data_XLy, vqf_real_t Data_XLz, vqf_real_t *angle);
 
 
-void filterAdaptStateForCoeffChange(vqf_real_t last_y[], size_t N, const double b_old[],
-                                         const double a_old[], const double b_new[],
-                                         const double a_new[], double state[]);
-void filterVec(const vqf_real_t x[], size_t N, vqf_real_t tau, vqf_real_t Ts, double b[3],
+void filterAdaptStateForCoeffChange(vqf_real_t last_y[], size_t N, double b_old[],
+                                         double a_old[], double b_new[],
+                                         double a_new[], double state[]);
+void filterVec(vqf_real_t x[], int N, vqf_real_t tau, vqf_real_t Ts, double b[3],
                     double a[2], double state[], vqf_real_t out[]);
 
 #endif 
